@@ -50,10 +50,11 @@ app.post('/login', async (req, res) => {
     // After successful login, determine user role and send it back to the client
     const role = user[0].role;
     const name = user[0].name;
+    const username = user[0].username;
 
     // Show browser alert
     // Note: This will only work in a browser environment, not in Node.js
-    res.json({ success: true, name, role });
+    res.json({ success: true, name, role, username });
 
     // Store login information in the database
     const userId = user[0].id;
