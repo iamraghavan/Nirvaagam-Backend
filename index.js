@@ -2,7 +2,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const mysql = require('mysql2/promise');
 const cors = require('cors');
-const moment = require('moment'); // for working with dates and times
+ // Import express-session
+const moment = require('moment');
 const nodemailer = require('nodemailer');
 
 const app = express();
@@ -13,8 +14,9 @@ app.use(cors());
 
 const axios = require('axios');
 
-let ipAddress; // Declare ipAddress variable outside the getPublicIP function
+let ipAddress;
 
+// Function to get public IP
 const getPublicIP = async () => {
   try {
     const response = await axios.get('https://api64.ipify.org/?format=json');
@@ -25,8 +27,9 @@ const getPublicIP = async () => {
   }
 };
 
-getPublicIP(); // Call getPublicIP to fetch the IP address
+getPublicIP();
 
+// MySQL connection configuration
 const db = mysql.createPool({
   host: '195.179.236.1',
   user: 'u888860508_admin',
@@ -37,6 +40,7 @@ const db = mysql.createPool({
   queueLimit: 0,
 });
 
+// Login endpoint
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -47,13 +51,11 @@ app.post('/login', async (req, res) => {
   );
 
   if (user.length === 1) {
-    // After successful login, determine user role and send it back to the client
     const role = user[0].role;
     const name = user[0].name;
     const username = user[0].username;
 
     // Show browser alert
-    // Note: This will only work in a browser environment, not in Node.js
     res.json({ success: true, name, role, username });
 
     // Store login information in the database
@@ -74,10 +76,10 @@ app.post('/login', async (req, res) => {
   }
 });
 
+// Send email endpoint
 app.post('/send-email', async (req, res) => {
   const { to, subject, text } = req.body;
 
-  // Nodemailer setup
   const transporter = nodemailer.createTransport({
     host: 'nirvaagam.egspgroup.in',
     port: 465,
@@ -88,7 +90,6 @@ app.post('/send-email', async (req, res) => {
     },
   });
 
-  // Email content
   const mailOptions = {
     from: 'noreply@nirvaagam.egspgroup.in',
     to,
@@ -96,7 +97,6 @@ app.post('/send-email', async (req, res) => {
     text,
   };
 
-  // Send the email
   transporter.sendMail(mailOptions, (error, info) => {
     if (error) {
       console.error('Error sending email:', error.message);
@@ -108,9 +108,12 @@ app.post('/send-email', async (req, res) => {
   });
 });
 
+
+
+
 app.listen(port, () => console.log(`Backend server running on port ${port}`));
 
-// Updated function to send an email asynchronously
+// Function to send login email asynchronously
 const sendLoginEmail = async (name, userEmail) => {
   try {
     const transporter = nodemailer.createTransport({
