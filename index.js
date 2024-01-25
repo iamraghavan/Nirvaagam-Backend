@@ -5,6 +5,9 @@ const cors = require('cors');
  // Import express-session
 const moment = require('moment');
 const nodemailer = require('nodemailer');
+const otpGenerator = require('otp-generator');
+
+const otpMap = new Map();
 
 const app = express();
 const port = 4000;
@@ -41,21 +44,76 @@ const db = mysql.createPool({
 });
 
 
-app.post("/add-user", (req, res) => {
-  const user = req.body;
 
-  // Insert the user into the database
-  const sql = "INSERT INTO `users` SET ?";
-  db.query(sql, user, (err, result) => {
-    if (err) {
-      console.error("Error adding user:", err);
-      res.json({ success: false, error: "Failed to add user" });
-    } else {
-      console.log("User added:", result);
-      res.status(201).json({ success: true, message: "User added successfully" });
+
+
+const welcomesendEmail = async (to, subject, html) => {
+  try {
+    const transporter = nodemailer.createTransport({
+      // Use your email service provider's configuration here
+      service: 'gmail',
+      auth: {
+        user: 'raghavanofficials@gmail.com',
+        pass: 'winp bknr ojez iipm',
+      },
+    });
+
+    const mailOptions = {
+      from: 'noreply@yourdomain.com',
+      cc : 'raghavanofficials@gmail.com',
+      to,
+      subject,
+      html,
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log('Email sent successfully');
+  } catch (error) {
+    console.error('Error sending email:', error.message);
+  }
+};
+
+// Your /add-user endpoint
+app.post('/add-user', async (req, res) => {
+  const { name, username, email, password, user_id, role } = req.body;
+
+  try {
+    // Check if any field is empty
+    if (!name || !username || !email || !password) {
+      return res.status(400).json({ success: false, error: 'All fields are required' });
     }
-  });
+
+    // Insert the user into the database
+    await db.query(
+      'INSERT INTO users (name, username, email, password, user_id, role) VALUES (?, ?, ?, ?, ?, ?)',
+      [name, username, email, password, user_id, role]
+    );
+
+    // Send email to the created user
+    const emailSubject = 'Welcome to EGSP Nirvaagam App !';
+    const emailHtml = `
+      <p>Hi ${name},</p>
+      <p>Your account has been created successfully with the following details:</p>
+      <ul>
+        <li>Username: ${username}</li>
+        <li>User ID: ${user_id}</li>
+        <li>Password: ${password}</li>
+      </ul>
+      <p>Thank you for joining us!</p>
+    `;
+
+    await welcomesendEmail(email, emailSubject, emailHtml);
+
+    res.status(201).json({ success: true, message: 'User added successfully' });
+  } catch (error) {
+    console.error('Error adding user:', error.message);
+    res.status(500).json({ success: false, message: 'Error adding user' });
+  }
 });
+
+
+
+
 
 
 
@@ -80,22 +138,6 @@ app.delete("/delete-user/:userEmail", async (req, res) => {
 });
 
 
-
-
-
-// Assuming you have a route to fetch users
-app.get('/executive-users', async (req, res) => {
-  try {
-    // Fetch users with 'Executive' role from the database
-    const [executiveUsers] = await db.query('SELECT id, name FROM users WHERE role = "Executive"');
-
-    res.json(executiveUsers);
-  } catch (error) {
-    console.error('Error fetching executive users:', error.message);
-    res.status(500).json({ error: 'Error fetching executive users' });
-  }
-});
-
 app.post('/create-ticket', async (req, res) => {
   const { title, description, created_by, assigned_to, ticketId } = req.body;
 
@@ -107,14 +149,15 @@ app.post('/create-ticket', async (req, res) => {
     );
 
     // Get the assigned executive's email from the database
-    const [executive] = await db.query('SELECT email FROM users WHERE id = ?', [assigned_to]);
+    const [executive] = await db.query('SELECT email, name FROM users WHERE id = ?', [assigned_to]);
+
 
     if (executive.length === 1) {
       const executiveEmail = executive[0].email;
       const executiveName = executive[0].name;
 
       // Send email to the assigned executive
-      sendEmail(executiveEmail, `Nirvaagam - New Ticket Created ${name}  Assign the Tickets to Supervisor`, `A new ticket (${ticketId}) has been assigned to you.`);
+      sendEmail(executiveEmail, ticketId, 'Nirvaagam - New Ticket Created', title, description, executiveName);
     }
 
     res.status(201).json({ success: true, message: 'Ticket created successfully' });
@@ -124,8 +167,9 @@ app.post('/create-ticket', async (req, res) => {
   }
 });
 
-// Function to send email
-const sendEmail = async (to, subject, text) => {
+
+
+const sendEmail = async (to, ticketId, subject, title, description, name) => {
   try {
     const transporter = nodemailer.createTransport({
       service: 'gmail',
@@ -139,88 +183,181 @@ const sendEmail = async (to, subject, text) => {
       from: 'noreply@nirvaagam.egspgroup.in',
       to,
       subject,
-      html : `<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+      html : `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+      <html dir="ltr" xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office">
+      
       <head>
-          <!--[if gte mso 9]>
-          <xml>
-              <o:OfficeDocumentSettings>
-              <o:AllowPNG/>
-              <o:PixelsPerInch>96</o:PixelsPerInch>
-              </o:OfficeDocumentSettings>
-          </xml>
+          <meta charset="UTF-8">
+          <meta content="width=device-width, initial-scale=1" name="viewport">
+          <meta name="x-apple-disable-message-reformatting">
+          <meta http-equiv="X-UA-Compatible" content="IE=edge">
+          <meta content="telephone=no" name="format-detection">
+          <title></title>
+          <!--[if (mso 16)]>
+          <style type="text/css">
+          a {text-decoration: none;}
+          </style>
           <![endif]-->
-          <title>Ticket Created</title>
+          <!--[if gte mso 9]><style>sup { font-size: 100% !important; }</style><![endif]-->
+          <!--[if gte mso 9]>
+      <xml>
+          <o:OfficeDocumentSettings>
+          <o:AllowPNG></o:AllowPNG>
+          <o:PixelsPerInch>96</o:PixelsPerInch>
+          </o:OfficeDocumentSettings>
+      </xml>
+      <![endif]-->
       </head>
-      <body style="margin: 0; padding: 0; font-family: 'Manrope', sans-serif; min-height: 100vh; background: #EBFAFA;">
-          <center>
-              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background: #EBFAFA;">
+      
+      <body>
+          <div dir="ltr" class="es-wrapper-color">
+              <!--[if gte mso 9]>
+            <v:background xmlns:v="urn:schemas-microsoft-com:vml" fill="t">
+              <v:fill type="tile" color="#f6f6f6"></v:fill>
+            </v:background>
+          <![endif]-->
+              <table class="es-wrapper" width="100%" cellspacing="0" cellpadding="0">
                   <tbody>
                       <tr>
-                          <td align="center">
-                              <table width="690" border="0" cellspacing="0" cellpadding="0">
+                          <td class="esd-email-paddings" valign="top">
+                              <table class="es-content esd-header-popover" cellspacing="0" cellpadding="0" align="center">
                                   <tbody>
                                       <tr>
-                                          <td style="padding: 35px;">
-                                              <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                          <td class="esd-stripe" align="center">
+                                              <table class="es-content-body" width="600" cellspacing="0" cellpadding="0" bgcolor="#ffffff" align="center">
                                                   <tbody>
                                                       <tr>
-                                                          <td style="border-radius: 8px;" bgcolor="#ffffff">
-                                                              <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                          <td class="esd-structure es-p5t es-p20r es-p20l" align="left" bgcolor="#222222" style="background-color: #222222;">
+                                                              <table width="100%" cellspacing="0" cellpadding="0">
                                                                   <tbody>
                                                                       <tr>
-                                                                          <td>
-                                                                              <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                                          <td class="esd-container-frame" width="560" valign="top" align="center">
+                                                                              <table width="100%" cellspacing="0" cellpadding="0">
                                                                                   <tbody>
                                                                                       <tr>
-                                                                                          <td style="text-align:center; padding: 70px 15px 32px;">
-                                                                                              <a href="#" target="_blank">
-                                                                                                  <img src="https://kurudhi-assets.s3.ap-south-1.amazonaws.com/logo-dark.svg" border="0" alt="Logo">
-                                                                                              </a>
+                                                                                          <td align="center" class="esd-block-image" style="font-size: 0px;"><a target="_blank" href="https://bumblebees.co.in"><img class="adapt-img" src="https://mcolfw.stripocdn.email/content/guids/CABINET_39254364a214f8068da04f2ed695900b7184bdb10d1b1fcfa5d66b206aab1e38/images/group_12.png" alt="Bumble Bees" style="display: block;" width="560" title="Bumble Bees"></a></td>
+                                                                                      </tr>
+                                                                                  </tbody>
+                                                                              </table>
+                                                                          </td>
+                                                                      </tr>
+                                                                  </tbody>
+                                                              </table>
+                                                          </td>
+                                                      </tr>
+                                                  </tbody>
+                                              </table>
+                                          </td>
+                                      </tr>
+                                  </tbody>
+                              </table>
+                              <table class="es-footer" cellspacing="0" cellpadding="0" align="center">
+                                  <tbody>
+                                      <tr>
+                                          <td class="esd-stripe" align="center">
+                                              <table class="es-footer-body" width="600" cellspacing="0" cellpadding="0" bgcolor="#ffffff" align="center">
+                                                  <tbody>
+                                                      <tr>
+                                                          <td class="esd-structure es-p20t es-p20r es-p20l" align="left">
+                                                              <table cellpadding="0" cellspacing="0" width="100%">
+                                                                  <tbody>
+                                                                      <tr>
+                                                                          <td width="560" class="esd-container-frame" align="center" valign="top">
+                                                                              <table cellpadding="0" cellspacing="0" width="100%">
+                                                                                  <tbody>
+                                                                                      <tr>
+                                                                                          <td align="left" class="esd-block-text">
+                                                                                              <p style="line-height: 200%; font-size: 20px; font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;"><strong>Dear ${name},</strong></p>
+                                                                                          </td>
+                                                                                      </tr>
+                                                                                      <tr>
+                                                                                          <td class="esd-block-text">
+                                                                                              <p style="text-align: justify; font-size: 19px; font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;">New ticket created! Please check your dashboard for details</p>
+                                                                                              <p style="text-align: justify; font-size: 19px; font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;"><br></p>
+                                                                                              <p style="text-align: justify; font-size: 19px; font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;">Ticket ID : ${ticketId}</p>
+                                                                                              <p style="text-align: justify; font-size: 16px; font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;"><br></p>
+                                                                                              <hr>
+                                                                                              <p style="text-align: justify; font-size: 16px; font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;">Ticket Title :</p>
+                                                                                              <p style="text-align: justify; font-size: 16px; font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;">{title}</p>
+                                                                                              <p style="text-align: justify; font-size: 16px; font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;"><br></p>
+                                                                                              <p style="text-align: justify; font-size: 16px; font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;">Ticket Description :</p>
+                                                                                              <p style="text-align: justify; font-size: 16px; font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;">{description}</p>
+                                                                                              <p style="text-align: justify; font-size: 16px; font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;"><br></p>
+                                                                                              <p style="text-align: justify; font-size: 16px; font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;">Login To your Dashboard</p>
+                                                                                          </td>
+                                                                                      </tr>
+                                                                                      <tr>
+                                                                                          <td align="left" class="esd-block-button es-p10t">
+                                                                                              <!--[if mso]><a href="https://egspgroup.in" target="_blank" hidden>
+        <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" esdevVmlButton href="https://egspgroup.in" 
+                      style="height:46px; v-text-anchor:middle; width:227px" arcsize="50%" stroke="f"  fillcolor="#333333">
+          <w:anchorlock></w:anchorlock>
+          <center style='color:#ffffff; font-family:"courier new", courier, "lucida sans typewriter", "lucida typewriter", monospace; font-size:16px; font-weight:400; line-height:16px;  mso-text-raise:1px'>Login Nirvaagam</center>
+        </v:roundrect></a>
+      <![endif]-->
+                                                                                              <!--[if !mso]><!-- --><span class="msohide es-button-border" style="border-width: 0px; border-color: #2cb543; background: #333333;"><a href="https://egspgroup.in" class="es-button es-button-1706170304156" target="_blank" style="font-family: &quot;courier new&quot;, courier, &quot;lucida sans typewriter&quot;, &quot;lucida typewriter&quot;, monospace; background: #333333; padding: 15px 20px 10px; mso-border-alt: 10px solid #333333">Login Nirvaagam</a></span>
+                                                                                              <!--<![endif]-->
                                                                                           </td>
                                                                                       </tr>
                                                                                   </tbody>
                                                                               </table>
-                                                                              <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                                          </td>
+                                                                      </tr>
+                                                                  </tbody>
+                                                              </table>
+                                                          </td>
+                                                      </tr>
+                                                      <tr>
+                                                          <td class="esd-structure es-p20t es-p20r es-p20l" align="left">
+                                                              <table cellpadding="0" cellspacing="0" width="100%">
+                                                                  <tbody>
+                                                                      <tr>
+                                                                          <td width="560" class="esd-container-frame" align="center" valign="top">
+                                                                              <table cellpadding="0" cellspacing="0" width="100%">
                                                                                   <tbody>
                                                                                       <tr>
-                                                                                          <td style="font-size:28px; line-height:40px; font-weight: bold; color:#2D3436; min-width:auto !important; text-align:center; letter-spacing: -0.02em; padding-bottom: 16px;">
-                                                                                              Ticket Created
-                                                                                              <br>
-                                                                                              <span style="font-size: 18px; color: #636E72;">Ticket ID: ${ticketId}</span>
+                                                                                          <td align="left" class="esd-block-text">
+                                                                                              <p style="font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace; font-size: 16px;">Best regards,</p>
+                                                                                              <p style="font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace; font-size: 16px;">Raghavan - Developer ( EGSP Group&nbsp;)</p>
+                                                                                              <p style="font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace; font-size: 16px;">Phone : +91 99425 02245</p>
+                                                                                              <p style="font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace; font-size: 16px;">2020 - 2024 © EGSP Groups -All rights reserved</p>
+                                                                                              <p style="display: none;"><br></p>
                                                                                           </td>
                                                                                       </tr>
-
-
-                                                                                      <td align="center" style="padding-bottom: 32px;">
-                                                                                                <table border="0" cellspacing="0" cellpadding="0" style="min-width: 200px;">
-                                                                                                    <tbody><tr>
-                                                                                                        <td style="font-size:14px; line-height:16px; text-align:center; min-width:auto !important;">
-                                                                                                            <a href="#" target="_blank" style="color:#0010F7; background: #ffffff; border: 1px solid #0010F7; border-radius:8px; display: block; padding: 12px 22px; text-decoration:none;">
-                                                                                                                Login Nirvaagam
-                                                                                                            </a>
-                                                                                                        </td>
-
-                                                                                                        
-                                                                                                    </tr>
-                                                                                                </tbody></table>
-                                                                                            </td>
-                                                                                     
+                                                                                  </tbody>
+                                                                              </table>
+                                                                          </td>
+                                                                      </tr>
+                                                                  </tbody>
+                                                              </table>
+                                                          </td>
+                                                      </tr>
+                                                  </tbody>
+                                              </table>
+                                          </td>
+                                      </tr>
+                                  </tbody>
+                              </table>
+                              <table cellpadding="0" cellspacing="0" class="es-content esd-footer-popover" align="center">
+                                  <tbody>
+                                      <tr>
+                                          <td class="esd-stripe" align="center">
+                                              <table bgcolor="#ffffff" class="es-content-body" align="center" cellpadding="0" cellspacing="0" width="600">
+                                                  <tbody>
+                                                      <tr>
+                                                          <td class="esd-structure" align="left">
+                                                              <table cellpadding="0" cellspacing="0" width="100%">
+                                                                  <tbody>
+                                                                      <tr>
+                                                                          <td width="600" class="esd-container-frame" align="center" valign="top">
+                                                                              <table cellpadding="0" cellspacing="0" width="100%">
+                                                                                  <tbody>
                                                                                       <tr>
-                                                                                          <td style="padding: 0 45px;">
-                                                                                              <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                                                          <td align="center" class="esd-block-spacer es-p5t es-p5b es-p20r es-p20l" style="font-size: 0px;">
+                                                                                              <table border="0" width="100%" height="100%" cellpadding="0" cellspacing="0">
                                                                                                   <tbody>
                                                                                                       <tr>
-                                                                                                          <td style="padding-bottom: 22px;">
-                                                                                                              <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                                                                                                                  <tbody>
-                                                                                                                      <tr>
-                                                                                                                          <td style="text-align:center; padding-bottom: 32px;">
-                                                                                                                              <!-- Your ticket details or additional content here -->
-                                                                                                                          </td>
-                                                                                                                      </tr>
-                                                                                                                  </tbody>
-                                                                                                              </table>
-                                                                                                          </td>
+                                                                                                          <td style="border-bottom: 1px solid #cccccc; background:none; height:1px; width:100%; margin:0px 0px 0px 0px;"></td>
                                                                                                       </tr>
                                                                                                   </tbody>
                                                                                               </table>
@@ -228,16 +365,50 @@ const sendEmail = async (to, subject, text) => {
                                                                                       </tr>
                                                                                   </tbody>
                                                                               </table>
-                                                                              <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                                          </td>
+                                                                      </tr>
+                                                                  </tbody>
+                                                              </table>
+                                                          </td>
+                                                      </tr>
+                                                      <tr>
+                                                          <td class="esd-structure es-p5t es-p20r es-p20l" align="left">
+                                                              <table cellpadding="0" cellspacing="0" width="100%">
+                                                                  <tbody>
+                                                                      <tr>
+                                                                          <td width="560" class="esd-container-frame" align="center" valign="top">
+                                                                              <table cellpadding="0" cellspacing="0" width="100%">
                                                                                   <tbody>
                                                                                       <tr>
-                                                                                          <td style="border-top: 1px solid #DFE6E9; min-width:auto !important; text-align:center; padding-top: 32px;">
-                                                                                              <img src="https://kurudhi-assets.s3.ap-south-1.amazonaws.com/logo-dark.svg" border="0" alt="Logo">
+                                                                                          <td align="center" class="esd-block-text">
+                                                                                              <p style="font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;">This message was sent from EGS Pillay Group, Nagapattinam</p>
                                                                                           </td>
                                                                                       </tr>
+                                                                                  </tbody>
+                                                                              </table>
+                                                                          </td>
+                                                                      </tr>
+                                                                  </tbody>
+                                                              </table>
+                                                          </td>
+                                                      </tr>
+                                                      <tr>
+                                                          <td class="esd-structure" align="left">
+                                                              <table cellpadding="0" cellspacing="0" width="100%">
+                                                                  <tbody>
+                                                                      <tr>
+                                                                          <td width="600" class="esd-container-frame" align="center" valign="top">
+                                                                              <table cellpadding="0" cellspacing="0" width="100%">
+                                                                                  <tbody>
                                                                                       <tr>
-                                                                                          <td style="font-size:12px; color:#B2BEC3; min-width:auto !important; line-height: 12px; text-align:center; padding-top: 32px;">
-                                                                                              EGSP Groups | Nivraagam Application
+                                                                                          <td align="center" class="esd-block-spacer es-p10t es-p10b es-p20r es-p20l" style="font-size: 0px;">
+                                                                                              <table border="0" width="100%" height="100%" cellpadding="0" cellspacing="0">
+                                                                                                  <tbody>
+                                                                                                      <tr>
+                                                                                                          <td style="border-bottom: 1px solid #cccccc; background:none; height:1px; width:100%; margin:0px 0px 0px 0px;"></td>
+                                                                                                      </tr>
+                                                                                                  </tbody>
+                                                                                              </table>
                                                                                           </td>
                                                                                       </tr>
                                                                                   </tbody>
@@ -258,10 +429,10 @@ const sendEmail = async (to, subject, text) => {
                       </tr>
                   </tbody>
               </table>
-          </center>
+          </div>
       </body>
-      </html>
-      `,
+      
+      </html>`,
     };
 
     await transporter.sendMail(mailOptions);
@@ -270,6 +441,28 @@ const sendEmail = async (to, subject, text) => {
     console.error('Error sending email:', error.message);
   }
 };
+
+
+
+
+
+
+// Assuming you have a route to fetch users
+app.get('/executive-users', async (req, res) => {
+  try {
+    // Fetch users with 'Executive' role from the database
+    const [executiveUsers] = await db.query('SELECT id, name FROM users WHERE role = "Executive"');
+
+    res.json(executiveUsers);
+  } catch (error) {
+    console.error('Error fetching executive users:', error.message);
+    res.status(500).json({ error: 'Error fetching executive users' });
+  }
+});
+
+
+
+// Function to send email
 
 
 
@@ -287,65 +480,163 @@ app.get('/get-users', async (req, res) => {
 
 
 
+const crypto = require('crypto');
 
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'raghavanofficials@gmail.com',
+    pass: 'winp bknr ojez iipm',
+  },
+});
+
+// Middleware to parse JSON requests
+app.use(bodyParser.json());
 
 // Login endpoint
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   // Validate credentials
-  const [user] = await db.query(
-    'SELECT * FROM users WHERE email = ? AND password = ?',
-    [email, password]
-  );
+  try {
+    const [user] = await db.query(
+      'SELECT * FROM users WHERE email = ? AND password = ?',
+      [email, password]
+    );
 
-  if (user.length === 1) {
-    const role = user[0].role;
-    const name = user[0].name;
-    const username = user[0].username;
+    if (user.length === 1) {
+      // Generate and store OTP
+      const otp = generateOTP();
+      storeOTP(email, otp);
 
-    // Show browser alert
-    res.json({ success: true, name, role, username });
+      // Send OTP via email
+      sendOTPEmail(email, otp);
 
-    
-
-    // Send login email asynchronously
-    sendLoginEmail(name, user[0].email);
-  } else {
-    res.json({ success: false, message: 'Invalid credentials' });
+      // Respond with success
+      res.json({ success: true, message: 'OTP sent to email' });
+    } else {
+      // Respond with failure
+      res.json({ success: false, message: 'Invalid credentials' });
+    }
+  } catch (error) {
+    console.error('Error during login:', error);
+    res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 });
 
-// Send email endpoint
-app.post('/send-email', async (req, res) => {
-  const { to, subject, text } = req.body;
 
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: 'raghavanofficials@gmail.com',
-      pass: 'winp bknr ojez iipm',
-    },
-  });
+async function getRoleByEmail(email) {
+  try {
+    const [user] = await db.query('SELECT role, name, username, email FROM users WHERE email = ?', [email]);
 
+    if (user.length === 1) {
+      // Return the user's role and additional information
+      return {
+        role: user[0].role,
+        name: user[0].name,
+        username: user[0].username,
+        email: user[0].email,
+      };
+    } else {
+      // Handle the case where the user is not found
+      console.error('User not found for email:', email);
+      return null; // or throw an error, depending on your error-handling strategy
+    }
+  } catch (error) {
+    console.error('Error during getRoleByEmail:', error);
+    throw error; // Handle the error appropriately in your application
+  }
+}
+
+app.post('/verify-otp', async (req, res) => {
+  const { email, otp } = req.body;
+
+  // Validate OTP
+  try {
+    const storedOTP = getStoredOTP(email);
+
+    if (storedOTP && !isOTPExpired(storedOTP) && !isOTPUsed(storedOTP, otp)) {
+      // Mark the OTP as used
+      markOTPAsUsed(storedOTP, otp);
+
+      // Get user role and additional information
+      const userRole = await getRoleByEmail(email);
+
+      if (userRole !== null) {
+        // OTP verification successful
+        res.status(200).json({ success: true, ...userRole }); // Spread userRole object
+        console.log(userRole.role + ' Logged In');
+      } else {
+        // User not found, handle the case appropriately
+        res.json({ success: false, message: 'User not found' });
+      }
+    } else {
+      // OTP verification failed
+      res.json({ success: false, message: 'Invalid OTP' });
+    }
+  } catch (error) {
+    console.error('Error during OTP verification:', error);
+    res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+});
+
+
+
+
+// Function to generate a secure OTP
+function generateOTP() {
+  return crypto.randomBytes(3).toString('hex').toUpperCase();
+}
+
+// Function to store OTP
+const storedOTPs = {};
+
+function storeOTP(email, otp) {
+  storedOTPs[email] = { otp, timestamp: Date.now(), used: [] };
+}
+
+// Function to retrieve stored OTP
+function getStoredOTP(email) {
+  return storedOTPs[email];
+}
+
+// Function to mark OTP as used
+function markOTPAsUsed(storedOTP, otp) {
+  storedOTP.used.push(otp);
+}
+
+// Function to check if OTP is expired
+function isOTPExpired(storedOTP) {
+  const currentTime = Date.now();
+  const otpTimestamp = storedOTP.timestamp;
+  const timeDifference = currentTime - otpTimestamp;
+  const otpExpirationTime = 60 * 1000; // 1 minute
+
+  return timeDifference > otpExpirationTime;
+}
+
+// Function to check if OTP has been used
+function isOTPUsed(storedOTP, otp) {
+  return storedOTP.used.includes(otp);
+}
+
+// Function to send OTP via email
+function sendOTPEmail(email, otp) {
   const mailOptions = {
-    from: 'noreply@nirvaagam.egspgroup.in',
-    to,
-    subject,
-    text,
+    from: 'your_email_address',
+    to: email,
+    subject: 'OTP Verification',
+    text: `Your OTP is: ${otp}`,
   };
 
   transporter.sendMail(mailOptions, (error, info) => {
     if (error) {
-      console.error('Error sending email:', error.message);
-      res.status(500).json({ success: false, message: 'Error sending email' });
+      console.error('Error sending email:', error);
     } else {
       console.log('Email sent:', info.response);
-      res.json({ success: true, message: 'Email sent successfully' });
     }
   });
-});
-
+}
 
 
 
