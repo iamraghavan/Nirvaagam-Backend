@@ -43,8 +43,24 @@ const db = mysql.createPool({
   queueLimit: 0,
 });
 
+async function checkDatabaseConnection() {
+  try {
+    // Get a connection from the pool
+    const connection = await db.getConnection();
 
-
+    // Check if the connection is successful
+    if (connection) {
+      console.log('Connected to the database!');
+      // Release the connection back to the pool
+      connection.release();
+    } else {
+      console.error('Failed to connect to the database.');
+    }
+  } catch (error) {
+    console.error('Error connecting to the database:', error.message);
+  }
+}
+checkDatabaseConnection();
 
 
 const welcomesendEmail = async (to, subject, html) => {
@@ -134,6 +150,24 @@ app.delete("/delete-user/:userEmail", async (req, res) => {
   } catch (error) {
     console.error("Error deleting user:", error);
     res.status(500).json({ success: false, error: "Failed to delete user" });
+  }
+});
+
+
+
+app.put('/edit-user/:userId', async (req, res) => {
+  const userId = req.params.userId;
+  const updatedUserData = req.body;
+
+  try {
+    // TODO: Add logic to update user data in the database
+   const result = await db.query('UPDATE users SET ... WHERE id = ?', [userId]);
+
+    console.log('User updated:', result);
+    res.status(200).json({ success: true, message: 'User updated successfully' });
+  } catch (error) {
+    console.error('Error updating user:', error);
+    res.status(500).json({ success: false, error: 'Failed to update user' });
   }
 });
 
