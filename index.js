@@ -7,6 +7,11 @@ const moment = require('moment');
 const nodemailer = require('nodemailer');
 const otpGenerator = require('otp-generator');
 
+
+const randomize = require('randomatic');
+
+
+
 const otpMap = new Map();
 
 const app = express();
@@ -527,44 +532,75 @@ const transporter = nodemailer.createTransport({
 // Middleware to parse JSON requests
 app.use(bodyParser.json());
 
-// Login endpoint
-app.post('/login', async (req, res) => {
+
+
+
+app.post('/login', (req, res) => {
   const { email, password } = req.body;
+  const query = 'SELECT * FROM users WHERE email = ? AND password = ?';
 
-  // Validate credentials
-  try {
-    const [user] = await db.query(
-      'SELECT * FROM users WHERE email = ? AND password = ?',
-      [email, password]
-    );
-
-    if (user.length === 1) {
-      // Generate and store OTP
-      const otp = generateOTP();
-      storeOTP(email, otp);
-
-      // Send OTP via email
-      sendOTPEmail(email, otp);
-
-      // Respond with success
-      res.json({ success: true, message: 'OTP sent to email' });
-    } else {
-      // Respond with failure
-      res.json({ success: false, message: 'Invalid credentials' });
+  db.query(query, [email, password], (err, results) => {
+    if (err) {
+      console.error('Error executing login query: ', err);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
     }
-  } catch (error) {
-    console.error('Error during login:', error);
-    res.status(500).json({ success: false, message: 'Internal Server Error' });
-  }
+
+    if (results.length > 0) {
+      const otp = randomize('0', 6);
+      storedOTPs[email] = otp;
+
+      sendOtpEmail(email, otp);
+
+      res.status(200).json({ success: true });
+    } else {
+      res.status(401).json({ error: 'Invalid credentials' });
+    }
+  });
 });
 
+function sendOtpEmail(email, otp) {
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: 'raghavanofficials@gmail.com',
+      pass: 'winp bknr ojez iipm',
+    },
+  });
+
+  const mailOptions = {
+    from: 'your-email@gmail.com',
+    to: email,
+    subject: 'Login OTP',
+    text: `Your OTP for login is: ${otp}`,
+  };
+
+  transporter.sendMail(mailOptions, (err, info) => {
+    if (err) {
+      console.error('Error sending OTP email: ', err);
+    } else {
+      console.log('Email sent: ', info.response);
+    }
+  });
+}
+
+app.post('/verify-otp', async (req, res) => {
+  const { email, otp } = req.body;
+  const storedOTP = storedOTPs[email];
+
+  if (storedOTP && storedOTP === otp) {
+    const userRole = await getRoleByEmail(email);
+    res.status(200).json({ success: true, message: 'OTP verified successfully', ...userRole });
+  } else {
+    res.status(400).json({ success: false, message: 'Invalid OTP' });
+  }
+});
 
 async function getRoleByEmail(email) {
   try {
     const [user] = await db.query('SELECT role, name, username, email FROM users WHERE email = ?', [email]);
 
     if (user.length === 1) {
-      // Return the user's role and additional information
       return {
         role: user[0].role,
         name: user[0].name,
@@ -572,107 +608,14 @@ async function getRoleByEmail(email) {
         email: user[0].email,
       };
     } else {
-      // Handle the case where the user is not found
       console.error('User not found for email:', email);
-      return null; // or throw an error, depending on your error-handling strategy
+      return null;
     }
   } catch (error) {
     console.error('Error during getRoleByEmail:', error);
-    throw error; // Handle the error appropriately in your application
+    throw error;
   }
 }
-
-app.post('/verify-otp', async (req, res) => {
-  const { email, otp } = req.body;
-
-  // Validate OTP
-  try {
-    const storedOTP = getStoredOTP(email);
-
-    if (storedOTP && !isOTPExpired(storedOTP) && !isOTPUsed(storedOTP, otp)) {
-      // Mark the OTP as used
-      markOTPAsUsed(storedOTP, otp);
-
-      // Get user role and additional information
-      const userRole = await getRoleByEmail(email);
-
-      if (userRole !== null) {
-        // OTP verification successful
-        res.status(200).json({ success: true, ...userRole }); // Spread userRole object
-        console.log(userRole.role + ' Logged In');
-      } else {
-        // User not found, handle the case appropriately
-        res.json({ success: false, message: 'User not found' });
-      }
-    } else {
-      // OTP verification failed
-      res.json({ success: false, message: 'Invalid OTP' });
-    }
-  } catch (error) {
-    console.error('Error during OTP verification:', error);
-    res.status(500).json({ success: false, message: 'Internal Server Error' });
-  }
-});
-
-
-
-
-// Function to generate a secure OTP
-function generateOTP() {
-  return crypto.randomBytes(3).toString('hex').toUpperCase();
-}
-
-// Function to store OTP
-const storedOTPs = {};
-
-function storeOTP(email, otp) {
-  storedOTPs[email] = { otp, timestamp: Date.now(), used: [] };
-}
-
-// Function to retrieve stored OTP
-function getStoredOTP(email) {
-  return storedOTPs[email];
-}
-
-// Function to mark OTP as used
-function markOTPAsUsed(storedOTP, otp) {
-  storedOTP.used.push(otp);
-}
-
-// Function to check if OTP is expired
-function isOTPExpired(storedOTP) {
-  const currentTime = Date.now();
-  const otpTimestamp = storedOTP.timestamp;
-  const timeDifference = currentTime - otpTimestamp;
-  const otpExpirationTime = 60 * 1000; // 1 minute
-
-  return timeDifference > otpExpirationTime;
-}
-
-// Function to check if OTP has been used
-function isOTPUsed(storedOTP, otp) {
-  return storedOTP.used.includes(otp);
-}
-
-// Function to send OTP via email
-function sendOTPEmail(email, otp) {
-  const mailOptions = {
-    from: 'your_email_address',
-    to: email,
-    subject: 'OTP Verification',
-    text: `Your OTP is: ${otp}`,
-  };
-
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.error('Error sending email:', error);
-    } else {
-      console.log('Email sent:', info.response);
-    }
-  });
-}
-
-
 
 app.listen(port, () => console.log(`Backend server running on port ${port}`));
 
