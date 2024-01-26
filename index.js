@@ -1,16 +1,13 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const mysql = require('mysql2/promise');
-const cors = require('cors');
- // Import express-session
-const moment = require('moment');
-const nodemailer = require('nodemailer');
-const otpGenerator = require('otp-generator');
+const express = require("express");
+const bodyParser = require("body-parser");
+const mysql = require("mysql2/promise");
+const cors = require("cors");
+// Import express-session
+const moment = require("moment");
+const nodemailer = require("nodemailer");
+const otpGenerator = require("otp-generator");
 
-
-const randomize = require('randomatic');
-
-
+const randomize = require("randomatic");
 
 const otpMap = new Map();
 
@@ -20,18 +17,18 @@ const port = 4000;
 app.use(bodyParser.json());
 app.use(cors());
 
-const axios = require('axios');
+const axios = require("axios");
 
 let ipAddress;
 
 // Function to get public IP
 const getPublicIP = async () => {
   try {
-    const response = await axios.get('https://api64.ipify.org/?format=json');
+    const response = await axios.get("https://api64.ipify.org/?format=json");
     ipAddress = response.data.ip;
-    console.log('Your public IP address:', ipAddress);
+    console.log("Your public IP address:", ipAddress);
   } catch (error) {
-    console.error('Error fetching public IP:', error.message);
+    console.error("Error fetching public IP:", error.message);
   }
 };
 
@@ -39,10 +36,10 @@ getPublicIP();
 
 // MySQL connection configuration
 const db = mysql.createPool({
-  host: '195.179.236.1',
-  user: 'u888860508_admin',
-  password: '232003@Anbu',
-  database: 'u888860508_nirvaagam',
+  host: "195.179.236.1",
+  user: "u888860508_admin",
+  password: "232003@Anbu",
+  database: "u888860508_nirvaagam",
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
@@ -55,63 +52,64 @@ async function checkDatabaseConnection() {
 
     // Check if the connection is successful
     if (connection) {
-      console.log('Connected to the database!');
+      console.log("Connected to the database!");
       // Release the connection back to the pool
       connection.release();
     } else {
-      console.error('Failed to connect to the database.');
+      console.error("Failed to connect to the database.");
     }
   } catch (error) {
-    console.error('Error connecting to the database:', error.message);
+    console.error("Error connecting to the database:", error.message);
   }
 }
 checkDatabaseConnection();
-
 
 const welcomesendEmail = async (to, subject, html) => {
   try {
     const transporter = nodemailer.createTransport({
       // Use your email service provider's configuration here
-      service: 'gmail',
+      service: "gmail",
       auth: {
-        user: 'raghavanofficials@gmail.com',
-        pass: 'winp bknr ojez iipm',
+        user: "raghavanofficials@gmail.com",
+        pass: "winp bknr ojez iipm",
       },
     });
 
     const mailOptions = {
-      from: 'noreply@yourdomain.com',
-      cc : 'raghavanofficials@gmail.com',
+      from: "noreply@yourdomain.com",
+      cc: "raghavanofficials@gmail.com",
       to,
       subject,
       html,
     };
 
     await transporter.sendMail(mailOptions);
-    console.log('Email sent successfully');
+    console.log("Email sent successfully");
   } catch (error) {
-    console.error('Error sending email:', error.message);
+    console.error("Error sending email:", error.message);
   }
 };
 
 // Your /add-user endpoint
-app.post('/add-user', async (req, res) => {
+app.post("/add-user", async (req, res) => {
   const { name, username, email, password, user_id, role } = req.body;
 
   try {
     // Check if any field is empty
     if (!name || !username || !email || !password) {
-      return res.status(400).json({ success: false, error: 'All fields are required' });
+      return res
+        .status(400)
+        .json({ success: false, error: "All fields are required" });
     }
 
     // Insert the user into the database
     await db.query(
-      'INSERT INTO users (name, username, email, password, user_id, role) VALUES (?, ?, ?, ?, ?, ?)',
-      [name, username, email, password, user_id, role]
+      "INSERT INTO users (name, username, email, password, user_id, role) VALUES (?, ?, ?, ?, ?, ?)",
+      [name, username, email, password, user_id, role],
     );
 
     // Send email to the created user
-    const emailSubject = 'Welcome to EGSP Nirvaagam App !';
+    const emailSubject = "Welcome to EGSP Nirvaagam App !";
     const emailHtml = `
       <p>Hi ${name},</p>
       <p>Your account has been created successfully with the following details:</p>
@@ -125,18 +123,12 @@ app.post('/add-user', async (req, res) => {
 
     await welcomesendEmail(email, emailSubject, emailHtml);
 
-    res.status(201).json({ success: true, message: 'User added successfully' });
+    res.status(201).json({ success: true, message: "User added successfully" });
   } catch (error) {
-    console.error('Error adding user:', error.message);
-    res.status(500).json({ success: false, message: 'Error adding user' });
+    console.error("Error adding user:", error.message);
+    res.status(500).json({ success: false, message: "Error adding user" });
   }
 });
-
-
-
-
-
-
 
 // Assuming you have an express app (app) and a MySQL pool (db) already defined
 
@@ -148,55 +140,69 @@ app.delete("/delete-user/:userEmail", async (req, res) => {
     await db.query("DELETE FROM tickets WHERE assigned_to = ?", [userEmail]);
 
     // Now, delete the user from the users table
-    const result = await db.query("DELETE FROM users WHERE email = ?", [userEmail]);
+    const result = await db.query("DELETE FROM users WHERE email = ?", [
+      userEmail,
+    ]);
 
     console.log("User deleted:", result);
-    res.status(201).json({ success: true, message: "User deleted successfully" });
+    res
+      .status(201)
+      .json({ success: true, message: "User deleted successfully" });
   } catch (error) {
     console.error("Error deleting user:", error);
     res.status(500).json({ success: false, error: "Failed to delete user" });
   }
 });
 
-
-
-app.put('/edit-user/:userId', async (req, res) => {
+app.put("/edit-user/:userId", async (req, res) => {
   const userId = req.params.userId;
   const updatedUserData = req.body;
 
   try {
     // TODO: Add logic to update user data in the database
-   const result = await db.query('UPDATE users SET ... WHERE id = ?', [userId]);
+    const result = await db.query("UPDATE users SET ... WHERE id = ?", [
+      userId,
+    ]);
 
-    console.log('User updated:', result);
-    res.status(200).json({ success: true, message: 'User updated successfully' });
+    console.log("User updated:", result);
+    res
+      .status(200)
+      .json({ success: true, message: "User updated successfully" });
   } catch (error) {
-    console.error('Error updating user:', error);
-    res.status(500).json({ success: false, error: 'Failed to update user' });
+    console.error("Error updating user:", error);
+    res.status(500).json({ success: false, error: "Failed to update user" });
   }
 });
 
-
 app.post('/create-ticket', async (req, res) => {
-  const { title, description, created_by, assigned_to, ticketId } = req.body;
+  const { title, description, name, assigned_to, priority, due_date, location, ticketId } = req.body;
 
   try {
     // Insert the ticket into the database
     await db.query(
-      'INSERT INTO tickets (title, description, status, created_by, assigned_to, ticket_id) VALUES (?, ?, ?, ?, ?, ?)',
-      [title, description, 'Open', created_by, assigned_to, ticketId]
+      'INSERT INTO tickets (title, description, status, created_by, assigned_to, priority, due_date, location, ticket_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [title, description, 'Open', name, assigned_to, priority, due_date, location, ticketId],
     );
 
     // Get the assigned executive's email from the database
-    const [executive] = await db.query('SELECT email, name FROM users WHERE id = ?', [assigned_to]);
-
+    const [executive] = await db.query(
+      'SELECT email, name FROM users WHERE id = ?',
+      [assigned_to],
+    );
 
     if (executive.length === 1) {
       const executiveEmail = executive[0].email;
       const executiveName = executive[0].name;
 
       // Send email to the assigned executive
-      sendEmail(executiveEmail, ticketId, 'Nirvaagam - New Ticket Created', title, description, executiveName);
+      sendEmail(
+        executiveEmail,
+        ticketId,
+        'Nirvaagam - New Ticket Created',
+        title,
+        description,
+        executiveName,
+      );
     }
 
     res.status(201).json({ success: true, message: 'Ticket created successfully' });
@@ -207,22 +213,21 @@ app.post('/create-ticket', async (req, res) => {
 });
 
 
-
 const sendEmail = async (to, ticketId, subject, title, description, name) => {
   try {
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      service: "gmail",
       auth: {
-        user: 'raghavanofficials@gmail.com',
-        pass: 'winp bknr ojez iipm',
+        user: "raghavanofficials@gmail.com",
+        pass: "winp bknr ojez iipm",
       },
     });
 
     const mailOptions = {
-      from: 'noreply@nirvaagam.egspgroup.in',
+      from: "noreply@nirvaagam.egspgroup.in",
       to,
       subject,
-      html : `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+      html: `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
       <html dir="ltr" xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office">
       
       <head>
@@ -475,130 +480,141 @@ const sendEmail = async (to, ticketId, subject, title, description, name) => {
     };
 
     await transporter.sendMail(mailOptions);
-    console.log('Email sent successfully');
+    console.log("Email sent successfully");
   } catch (error) {
-    console.error('Error sending email:', error.message);
+    console.error("Error sending email:", error.message);
   }
 };
 
-
-
-
-
-
 // Assuming you have a route to fetch users
-app.get('/executive-users', async (req, res) => {
+app.get("/executive-users", async (req, res) => {
   try {
     // Fetch users with 'Executive' role from the database
-    const [executiveUsers] = await db.query('SELECT id, name FROM users WHERE role = "Executive"');
+    const [executiveUsers] = await db.query(
+      'SELECT id, name FROM users WHERE role = "Executive"',
+    );
 
     res.json(executiveUsers);
   } catch (error) {
-    console.error('Error fetching executive users:', error.message);
-    res.status(500).json({ error: 'Error fetching executive users' });
+    console.error("Error fetching executive users:", error.message);
+    res.status(500).json({ error: "Error fetching executive users" });
   }
 });
-
-
 
 // Function to send email
 
-
-
-
-app.get('/get-users', async (req, res) => {
+app.get("/get-users", async (req, res) => {
   try {
     // Fetch all users from the database
-    const [users] = await db.query('SELECT * FROM users');
+    const [users] = await db.query("SELECT * FROM users");
     res.json(users);
   } catch (error) {
-    console.error('Error fetching users:', error.message);
-    res.status(500).json({ error: 'Error fetching users' });
+    console.error("Error fetching users:", error.message);
+    res.status(500).json({ error: "Error fetching users" });
   }
 });
 
-
-
-const crypto = require('crypto');
+const crypto = require("crypto");
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  service: "gmail",
   auth: {
-    user: 'raghavanofficials@gmail.com',
-    pass: 'winp bknr ojez iipm',
+    user: "raghavanofficials@gmail.com",
+    pass: "winp bknr ojez iipm",
   },
 });
 
 // Middleware to parse JSON requests
 app.use(bodyParser.json());
 
+// Define storedOTPs
+const storedOTPs = {};
 
-
-
-app.post('/login', (req, res) => {
+app.post("/login", async (req, res) => {
   const { email, password } = req.body;
-  const query = 'SELECT * FROM users WHERE email = ? AND password = ?';
 
-  db.query(query, [email, password], (err, results) => {
-    if (err) {
-      console.error('Error executing login query: ', err);
-      res.status(500).json({ error: 'Internal Server Error' });
-      return;
-    }
+  try {
+    // Query to check if the email and password match in the database
+    const query = "SELECT * FROM users WHERE email = ? AND password = ?";
+    const [results] = await db.query(query, [email, password]);
 
     if (results.length > 0) {
-      const otp = randomize('0', 6);
-      storedOTPs[email] = otp;
+      // If the user exists, generate and send an OTP
+      const otp = randomize("0", 6);
+      storedOTPs[email] = otp; // Store the OTP
 
       sendOtpEmail(email, otp);
 
+      // Send a response indicating successful login
       res.status(200).json({ success: true });
     } else {
-      res.status(401).json({ error: 'Invalid credentials' });
+      // Send a response for invalid credentials
+      res.status(401).json({ error: "Invalid credentials" });
     }
-  });
+  } catch (error) {
+    // Log the error and send a generic error response
+    console.error("Error executing login query:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
 
+// Function to send OTP via email
 function sendOtpEmail(email, otp) {
+  // Configure nodemailer with your email provider settings
   const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    service: "gmail",
     auth: {
-      user: 'raghavanofficials@gmail.com',
-      pass: 'winp bknr ojez iipm',
+      user: "raghavanofficials@gmail.com",
+      pass: "winp bknr ojez iipm",
     },
   });
 
   const mailOptions = {
-    from: 'your-email@gmail.com',
+    from: "your-email@gmail.com",
     to: email,
-    subject: 'Login OTP',
+    subject: "Login OTP",
     text: `Your OTP for login is: ${otp}`,
   };
 
   transporter.sendMail(mailOptions, (err, info) => {
     if (err) {
-      console.error('Error sending OTP email: ', err);
+      console.error("Error sending OTP email: ", err);
     } else {
-      console.log('Email sent: ', info.response);
+      console.log("Email sent: ", info.response);
     }
   });
 }
 
-app.post('/verify-otp', async (req, res) => {
+// Endpoint for OTP verification
+app.post("/verify-otp", async (req, res) => {
   const { email, otp } = req.body;
+
+  // Retrieve stored OTP for the given email
   const storedOTP = storedOTPs[email];
 
+  const userRole = await getRoleByEmail(email);
+
   if (storedOTP && storedOTP === otp) {
-    const userRole = await getRoleByEmail(email);
-    res.status(200).json({ success: true, message: 'OTP verified successfully', ...userRole });
+    // If OTP is valid, you can perform additional actions here
+    res
+      .status(200)
+      .json({
+        success: true,
+        message: "OTP verified successfully",
+        ...userRole,
+      });
+    sendLoginEmail();
   } else {
-    res.status(400).json({ success: false, message: 'Invalid OTP' });
+    res.status(400).json({ success: false, message: "Invalid OTP" });
   }
 });
 
 async function getRoleByEmail(email) {
   try {
-    const [user] = await db.query('SELECT role, name, username, email FROM users WHERE email = ?', [email]);
+    const [user] = await db.query(
+      "SELECT role, name, username, email FROM users WHERE email = ?",
+      [email],
+    );
 
     if (user.length === 1) {
       return {
@@ -608,11 +624,11 @@ async function getRoleByEmail(email) {
         email: user[0].email,
       };
     } else {
-      console.error('User not found for email:', email);
+      console.error("User not found for email:", email);
       return null;
     }
   } catch (error) {
-    console.error('Error during getRoleByEmail:', error);
+    console.error("Error during getRoleByEmail:", error);
     throw error;
   }
 }
@@ -623,26 +639,26 @@ app.listen(port, () => console.log(`Backend server running on port ${port}`));
 const sendLoginEmail = async (name, userEmail) => {
   try {
     const transporter = nodemailer.createTransport({
-      host: 'mail.egspgroup.in',
+      host: "mail.egspgroup.in",
       port: 465,
       secure: true,
       auth: {
-        user: 'helpdesk@egspgroup.in',
-        pass: '232003@Anbu',
+        user: "helpdesk@egspgroup.in",
+        pass: "232003@Anbu",
       },
     });
 
     const mailOptions = {
-      from: 'noreply@egspgroup.in',
+      from: "noreply@egspgroup.in",
       to: userEmail,
-      subject: 'Login to EGSP Groups Nirvaagam Application',
+      subject: "Login to EGSP Groups Nirvaagam Application",
       text: `Dear ${name},\n\nYou have successfully logged in to EGSP Groups Nirvaagam Application.\n\nBest regards,\nEGSP Groups`,
     };
 
     // Send the email asynchronously
     await transporter.sendMail(mailOptions);
-    console.log('Email sent successfully');
+    console.log("Email sent successfully");
   } catch (error) {
-    console.error('Error sending email:', error.message);
+    console.error("Error sending email:", error.message);
   }
 };
