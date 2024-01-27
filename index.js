@@ -552,9 +552,9 @@ app.post("/login", async (req, res) => {
       res.status(401).json({ error: "Invalid credentials" });
     }
   } catch (error) {
-    // Log the error and send a generic error response
+    // Log the error and send a more detailed error response
     console.error("Error executing login query:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: "Internal Server Error", message: error.message });
   }
 });
 
@@ -657,7 +657,7 @@ function sendOtpEmail(email, otp) {
                                                                                 <tbody>
                                                                                     <tr>
                                                                                         <td align="left" class="esd-block-text">
-                                                                                            <p style="line-height: 200%; font-size: 20px; font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;"><strong>Dear ${name},</strong></p>
+                                                                                            <p style="line-height: 200%; font-size: 20px; font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;"><strong>Dont Share the OTP to Anyone</strong></p>
                                                                                         </td>
                                                                                     </tr>
                                                                                     <tr>
