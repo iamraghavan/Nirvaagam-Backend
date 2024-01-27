@@ -573,37 +573,236 @@ function sendOtpEmail(email, otp) {
     from: "your-email@gmail.com",
     to: email,
     subject: "Login OTP From Nirvaagam Application ",
-    html : `<!DOCTYPE html>
-    <html lang="en">
+    html : `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+    <html dir="ltr" xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office">
     
     <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Nirvaagam OTP Email</title>
+        <meta charset="UTF-8">
+        <meta content="width=device-width, initial-scale=1" name="viewport">
+        <meta name="x-apple-disable-message-reformatting">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta content="telephone=no" name="format-detection">
+        <title></title>
+        <!--[if (mso 16)]>
+        <style type="text/css">
+        a {text-decoration: none;}
+        </style>
+        <![endif]-->
+        <!--[if gte mso 9]><style>sup { font-size: 100% !important; }</style><![endif]-->
+        <!--[if gte mso 9]>
+    <xml>
+        <o:OfficeDocumentSettings>
+        <o:AllowPNG></o:AllowPNG>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+        </o:OfficeDocumentSettings>
+    </xml>
+    <![endif]-->
     </head>
     
-    <body style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4;">
-    
-      <header style="background: #333; color: white; padding-top: 20px; min-height: 70px; border-bottom: #bbb 1px solid; text-align: center;">
-        <img src="https://mcolfw.stripocdn.email/content/guids/CABINET_39254364a214f8068da04f2ed695900b7184bdb10d1b1fcfa5d66b206aab1e38/images/group_12.png" alt="EGSP Group Logo" style="width: 80px; height: auto;">
-      </header>
-    
-      <div style="width: 80%; margin: auto; overflow: hidden; padding: 20px; background: #ffffff;" class="main">
-        <div style="padding: 20px; border: 1px solid #ddd; background: #f9f9f9; text-align: center;" class="otp-container">
-          <h2>Your OTP for Login</h2>
-          <p>Your OTP is: <strong>${otp}</strong></p>
-          <p>Use this OTP to complete your login process.</p>
+    <body>
+        <div dir="ltr" class="es-wrapper-color">
+            <!--[if gte mso 9]>
+          <v:background xmlns:v="urn:schemas-microsoft-com:vml" fill="t">
+            <v:fill type="tile" color="#f6f6f6"></v:fill>
+          </v:background>
+        <![endif]-->
+            <table class="es-wrapper" width="100%" cellspacing="0" cellpadding="0">
+                <tbody>
+                    <tr>
+                        <td class="esd-email-paddings" valign="top">
+                            <table class="es-content esd-header-popover" cellspacing="0" cellpadding="0" align="center">
+                                <tbody>
+                                    <tr>
+                                        <td class="esd-stripe" align="center">
+                                            <table class="es-content-body" width="600" cellspacing="0" cellpadding="0" bgcolor="#ffffff" align="center">
+                                                <tbody>
+                                                    <tr>
+                                                        <td class="esd-structure es-p5t es-p20r es-p20l" align="left" bgcolor="#222222" style="background-color: #222222;">
+                                                            <table width="100%" cellspacing="0" cellpadding="0">
+                                                                <tbody>
+                                                                    <tr>
+                                                                        <td class="esd-container-frame" width="560" valign="top" align="center">
+                                                                            <table width="100%" cellspacing="0" cellpadding="0">
+                                                                                <tbody>
+                                                                                    <tr>
+                                                                                        <td align="center" class="esd-block-image" style="font-size: 0px;"><a target="_blank" href="https://bumblebees.co.in"><img class="adapt-img" src="https://mcolfw.stripocdn.email/content/guids/CABINET_39254364a214f8068da04f2ed695900b7184bdb10d1b1fcfa5d66b206aab1e38/images/group_12.png" alt="Bumble Bees" style="display: block;" width="560" title="Bumble Bees"></a></td>
+                                                                                    </tr>
+                                                                                </tbody>
+                                                                            </table>
+                                                                        </td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <table class="es-footer" cellspacing="0" cellpadding="0" align="center">
+                                <tbody>
+                                    <tr>
+                                        <td class="esd-stripe" align="center">
+                                            <table class="es-footer-body" width="600" cellspacing="0" cellpadding="0" bgcolor="#ffffff" align="center">
+                                                <tbody>
+                                                    <tr>
+                                                        <td class="esd-structure es-p20t es-p20r es-p20l" align="left">
+                                                            <table cellpadding="0" cellspacing="0" width="100%">
+                                                                <tbody>
+                                                                    <tr>
+                                                                        <td width="560" class="esd-container-frame" align="center" valign="top">
+                                                                            <table cellpadding="0" cellspacing="0" width="100%">
+                                                                                <tbody>
+                                                                                    <tr>
+                                                                                        <td align="left" class="esd-block-text">
+                                                                                            <p style="line-height: 200%; font-size: 20px; font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;"><strong>Dear ${name},</strong></p>
+                                                                                        </td>
+                                                                                    </tr>
+                                                                                    <tr>
+                                                                                        <td class="esd-block-text">
+                                                                                            <p style="text-align: justify; font-size: 19px; font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;">Your One Time Password for Login</p>
+                                                                                            <p style="text-align: justify; font-size: 19px; font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;"><br></p>
+                                                                                            <p style="text-align: justify; font-size: 19px; font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;">OTP : ${otp}</p>
+                                                                                            <p style="text-align: justify; font-size: 19px; font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;"><br></p>
+                                                                                            <p style="text-align: justify; font-size: 15px; font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;">Use this OTP to complete your login process.</p>
+                                                                                        </td>
+                                                                                    </tr>
+                                                                                </tbody>
+                                                                            </table>
+                                                                        </td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="esd-structure es-p20t es-p20r es-p20l" align="left">
+                                                            <table cellpadding="0" cellspacing="0" width="100%">
+                                                                <tbody>
+                                                                    <tr>
+                                                                        <td width="560" class="esd-container-frame" align="center" valign="top">
+                                                                            <table cellpadding="0" cellspacing="0" width="100%">
+                                                                                <tbody>
+                                                                                    <tr>
+                                                                                        <td align="left" class="esd-block-text">
+                                                                                            <p style="font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace; font-size: 16px;">Best regards,</p>
+                                                                                            <p style="font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace; font-size: 16px;">Raghavan - Developer ( EGSP Group&nbsp;)</p>
+                                                                                            <p style="font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace; font-size: 16px;">Phone : +91 99425 02245</p>
+                                                                                            <p style="font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace; font-size: 16px;">2020 - 2024 © EGSP Groups -All rights reserved</p>
+                                                                                            <p style="display: none;"><br></p>
+                                                                                        </td>
+                                                                                    </tr>
+                                                                                </tbody>
+                                                                            </table>
+                                                                        </td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <table cellpadding="0" cellspacing="0" class="es-content esd-footer-popover" align="center">
+                                <tbody>
+                                    <tr>
+                                        <td class="esd-stripe" align="center">
+                                            <table bgcolor="#ffffff" class="es-content-body" align="center" cellpadding="0" cellspacing="0" width="600">
+                                                <tbody>
+                                                    <tr>
+                                                        <td class="esd-structure" align="left">
+                                                            <table cellpadding="0" cellspacing="0" width="100%">
+                                                                <tbody>
+                                                                    <tr>
+                                                                        <td width="600" class="esd-container-frame" align="center" valign="top">
+                                                                            <table cellpadding="0" cellspacing="0" width="100%">
+                                                                                <tbody>
+                                                                                    <tr>
+                                                                                        <td align="center" class="esd-block-spacer es-p5t es-p5b es-p20r es-p20l" style="font-size: 0px;">
+                                                                                            <table border="0" width="100%" height="100%" cellpadding="0" cellspacing="0">
+                                                                                                <tbody>
+                                                                                                    <tr>
+                                                                                                        <td style="border-bottom: 1px solid #cccccc; background:none; height:1px; width:100%; margin:0px 0px 0px 0px;"></td>
+                                                                                                    </tr>
+                                                                                                </tbody>
+                                                                                            </table>
+                                                                                        </td>
+                                                                                    </tr>
+                                                                                </tbody>
+                                                                            </table>
+                                                                        </td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="esd-structure es-p5t es-p20r es-p20l" align="left">
+                                                            <table cellpadding="0" cellspacing="0" width="100%">
+                                                                <tbody>
+                                                                    <tr>
+                                                                        <td width="560" class="esd-container-frame" align="center" valign="top">
+                                                                            <table cellpadding="0" cellspacing="0" width="100%">
+                                                                                <tbody>
+                                                                                    <tr>
+                                                                                        <td align="center" class="esd-block-text">
+                                                                                            <p style="font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;">This message was sent from EGS Pillay Group, Nagapattinam</p>
+                                                                                        </td>
+                                                                                    </tr>
+                                                                                </tbody>
+                                                                            </table>
+                                                                        </td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="esd-structure" align="left">
+                                                            <table cellpadding="0" cellspacing="0" width="100%">
+                                                                <tbody>
+                                                                    <tr>
+                                                                        <td width="600" class="esd-container-frame" align="center" valign="top">
+                                                                            <table cellpadding="0" cellspacing="0" width="100%">
+                                                                                <tbody>
+                                                                                    <tr>
+                                                                                        <td align="center" class="esd-block-spacer es-p10t es-p10b es-p20r es-p20l" style="font-size: 0px;">
+                                                                                            <table border="0" width="100%" height="100%" cellpadding="0" cellspacing="0">
+                                                                                                <tbody>
+                                                                                                    <tr>
+                                                                                                        <td style="border-bottom: 1px solid #cccccc; background:none; height:1px; width:100%; margin:0px 0px 0px 0px;"></td>
+                                                                                                    </tr>
+                                                                                                </tbody>
+                                                                                            </table>
+                                                                                        </td>
+                                                                                    </tr>
+                                                                                </tbody>
+                                                                            </table>
+                                                                        </td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
-      </div>
-    
-      <footer style="padding: 20px; background: #333; color: white; text-align: center;">
-        <p>&copy; 2024 Nirvaagam | EGSP Group Development Team</p>
-      </footer>
-    
     </body>
     
-    </html>
-    `,
+    </html>`
   };
 
   transporter.sendMail(mailOptions, (err, info) => {
