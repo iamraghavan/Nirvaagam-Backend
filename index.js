@@ -322,10 +322,10 @@ const sendEmail = async (to, ticketId, subject, title, description, name) => {
                                                                                               <p style="text-align: justify; font-size: 16px; font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;"><br></p>
                                                                                               <hr>
                                                                                               <p style="text-align: justify; font-size: 16px; font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;">Ticket Title :</p>
-                                                                                              <p style="text-align: justify; font-size: 16px; font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;">{title}</p>
+                                                                                              <p style="text-align: justify; font-size: 16px; font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;">${title}</p>
                                                                                               <p style="text-align: justify; font-size: 16px; font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;"><br></p>
                                                                                               <p style="text-align: justify; font-size: 16px; font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;">Ticket Description :</p>
-                                                                                              <p style="text-align: justify; font-size: 16px; font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;">{description}</p>
+                                                                                              <p style="text-align: justify; font-size: 16px; font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;">${description}</p>
                                                                                               <p style="text-align: justify; font-size: 16px; font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;"><br></p>
                                                                                               <p style="text-align: justify; font-size: 16px; font-family: 'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;">Login To your Dashboard</p>
                                                                                           </td>
@@ -572,8 +572,38 @@ function sendOtpEmail(email, otp) {
   const mailOptions = {
     from: "your-email@gmail.com",
     to: email,
-    subject: "Login OTP",
-    text: `Your OTP for login is: ${otp}`,
+    subject: "Login OTP From Nirvaagam Application ",
+    html : `<!DOCTYPE html>
+    <html lang="en">
+    
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Nirvaagam OTP Email</title>
+    </head>
+    
+    <body style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4;">
+    
+      <header style="background: #333; color: white; padding-top: 20px; min-height: 70px; border-bottom: #bbb 1px solid; text-align: center;">
+        <img src="https://mcolfw.stripocdn.email/content/guids/CABINET_39254364a214f8068da04f2ed695900b7184bdb10d1b1fcfa5d66b206aab1e38/images/group_12.png" alt="EGSP Group Logo" style="width: 80px; height: auto;">
+      </header>
+    
+      <div style="width: 80%; margin: auto; overflow: hidden; padding: 20px; background: #ffffff;" class="main">
+        <div style="padding: 20px; border: 1px solid #ddd; background: #f9f9f9; text-align: center;" class="otp-container">
+          <h2>Your OTP for Login</h2>
+          <p>Your OTP is: <strong>${otp}</strong></p>
+          <p>Use this OTP to complete your login process.</p>
+        </div>
+      </div>
+    
+      <footer style="padding: 20px; background: #333; color: white; text-align: center;">
+        <p>&copy; 2024 Nirvaagam | EGSP Group Development Team</p>
+      </footer>
+    
+    </body>
+    
+    </html>
+    `,
   };
 
   transporter.sendMail(mailOptions, (err, info) => {
