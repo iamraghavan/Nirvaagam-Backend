@@ -64,6 +64,56 @@ async function checkDatabaseConnection() {
 }
 checkDatabaseConnection();
 
+app.get("/tickets/:ticketId", async (req, res) => {
+    try {
+      const { ticketId } = req.params;
+
+      // Fetch the ticket with the given ID from the database
+      const [ticket] = await db.query(
+        'SELECT * FROM tickets WHERE ticket_id = ?',
+        [ticketId],
+      );
+  
+      if (!ticket) {
+        return res.status(404).json({ error: "Ticket not found" });
+      }
+  
+      res.json(ticket);
+    } catch (error) {
+      console.error("Error fetching ticket:", error.message);
+      res.status(500).json({ error: "Error fetching ticket" });
+    }
+});
+
+  
+
+
+
+app.post('/unlock-user', async (req, res) => {
+    console.log('Unlock endpoint called');
+    const { email, password } = req.body;
+  
+    try {
+      // Query the database for email and password verification
+      const [rows] = await db.execute('SELECT role FROM users WHERE email = ? AND password = ?', [email, password]);
+  
+      if (rows.length === 0) {
+        console.log('Invalid credentials');
+        res.status(401).json({ error: 'Invalid credentials' });
+      } else {
+        const role = rows[0].role;
+        console.log('User role:', role);
+        res.status(200).json({ role });
+      }
+    } catch (error) {
+      console.error('Error during database query:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  });
+  
+  
+
+
 const welcomesendEmail = async (to, subject, html) => {
   try {
     const transporter = nodemailer.createTransport({
@@ -153,6 +203,42 @@ app.delete("/delete-user/:userEmail", async (req, res) => {
     res.status(500).json({ success: false, error: "Failed to delete user" });
   }
 });
+app.delete('/delete-ticket/:ticketId', async (req, res) => {
+    const { ticketId } = req.params;
+  
+    try {
+      // Fetch assigned person details from the users table
+      const [[{ email: assignedPersonEmail }]] = await db.query('SELECT email FROM users WHERE id = (SELECT assigned_to FROM tickets WHERE ticket_id = ?)', [ticketId]);
+  
+      console.log("User deleted. Assigned person email:", assignedPersonEmail);
+  
+      if (!assignedPersonEmail) {
+        console.error('Assigned person email is null or undefined.');
+        res.status(500).json({ success: false, error: 'Assigned person email is null or undefined' });
+        return;
+      }
+  
+      console.log('Deleting ticket with ID:', ticketId);
+      const result = await db.query('DELETE FROM tickets WHERE ticket_id = ?', [ticketId]);
+      console.log('Ticket deleted:', result);
+  
+      // Send email to assigned person
+      await transporter.sendMail({
+        from: 'your-email@gmail.com',
+        to: assignedPersonEmail,
+        subject: 'Ticket Deletion Notification',
+        text: 'Your assigned work has been deleted or canceled by the controller.',
+      });
+  
+      res.status(200).json({ success: true, message: 'Ticket deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting Ticket:', error);
+      res.status(500).json({ success: false, error: 'Failed to delete Ticket' });
+    }
+  });
+  
+  
+  
 
 app.put("/edit-user/:userId", async (req, res) => {
   const userId = req.params.userId;
@@ -513,6 +599,18 @@ app.get("/get-users", async (req, res) => {
     res.status(500).json({ error: "Error fetching users" });
   }
 });
+
+
+app.get("/get-ticket", async (req, res) => {
+    try {
+      // Fetch all users from the database
+      const [tickets] = await db.query("SELECT * FROM tickets");
+      res.json(tickets);
+    } catch (error) {
+      console.error("Error fetching users:", error.message);
+      res.status(500).json({ error: "Error fetching users" });
+    }
+  });
 
 const crypto = require("crypto");
 
