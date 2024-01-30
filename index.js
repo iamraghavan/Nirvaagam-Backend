@@ -198,6 +198,69 @@ app.post('/update-ticket-status/:ticketId', async (req, res) => {
   }
 });
 
+
+app.post('/product-request-update/:ticketId', async (req, res) => {
+    try {
+      const { ticketId } = req.params;
+      const { newStatus } = req.body;
+  
+      console.log('Updating ticket status:', ticketId, newStatus);
+  
+      // Update the ticket status in the database
+      const [result] = await db.query(
+        'UPDATE product_requests SET status = ? WHERE product_request_id = ?',
+        [newStatus, ticketId]
+      );
+  
+      if (result.affectedRows > 0) {
+        // If the status is 'closed', send an email
+        if (newStatus === 'closed') {
+          const [ticketDetails] = await db.query(
+            'SELECT * FROM product_requests WHERE product_request_id = ?',
+            [ticketId]
+          );
+  
+          // Check if ticketDetails is found
+          if (ticketDetails.length === 0) {
+            res.status(404).json({ success: false, message: 'Ticket not found' });
+            return; // Important: Return to avoid sending multiple responses
+          }
+  
+          // Fetch assigned_by user email from users table
+          const [assignedByUser] = await db.query(
+            'SELECT email FROM users WHERE name = ?',
+            [ticketDetails[0].created_by]
+          );
+  
+          console.log('Assigned by user:', assignedByUser);
+  
+          const mailOptions = {
+            from: 'your-email@gmail.com',
+            to: assignedByUser[0].email,
+            subject: 'Product Delivered Successfully',
+            text: `Product Delivered : ${ticketId} has been closed successfully.`
+          };
+  
+          // Send the email
+          transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+              console.error('Error sending email:', error);
+            } else {
+              console.log('Email sent:', info.response);
+            }
+          });
+        }
+  
+        res.status(200).json({ success: true, message: 'Product Delivered - status updated successfully' });
+      } else {
+        res.status(404).json({ success: false, message: 'Ticket not found' });
+      }
+    } catch (error) {
+      console.error('Error updating ticket status:', error);
+      res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+  });
+
   
   
 
@@ -1079,7 +1142,7 @@ app.get("/get-ticket", async (req, res) => {
 
   app.get("/get-product-status", async (req, res) => {
     try {
-      // Fetch all users from the database
+     
       const [tickets] = await db.query("SELECT * FROM product_requests");
       res.json(tickets);
     } catch (error) {
@@ -1087,6 +1150,25 @@ app.get("/get-ticket", async (req, res) => {
       res.status(500).json({ error: "Error fetching users" });
     }
   });
+
+
+// Example Express route handling the dynamic slug
+app.get('/get-product-slug/:slug', async (req, res) => {
+    try {
+      const slug = req.params.slug;
+
+
+
+      const [productDetails] = await db.query('SELECT * FROM product_requests WHERE product_request_id = ?', [slug]);
+  
+      // Respond with the product details
+      res.status(200).json({ productDetails });
+    } catch (error) {
+      console.error('Error fetching product details:', error.message);
+      res.status(500).json({ error: 'Error fetching product details' });
+    }
+  });
+  
 
 const crypto = require("crypto");
 
