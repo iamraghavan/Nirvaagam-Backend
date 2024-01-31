@@ -502,13 +502,13 @@ app.post('/create-ticket', async (req, res) => {
 
 
 app.post('/product-requests', async (req, res) => {
-  const { product_name, quantity, created_by, store_assigned_to, productRequestId } = req.body;
+  const { product_name, quantity, created_by, store_assigned_to, productRequestId, downloadURL } = req.body;
 
   try {
     // Insert the product request into the database
     await db.query(
-      'INSERT INTO product_requests (product_name, created_by, product_request_id, store_assigned_to, status) VALUES (?, ?, ?, ?, ?)',
-      [product_name, created_by, productRequestId, store_assigned_to, 'open']
+      'INSERT INTO product_requests (product_name, created_by, product_request_id, store_assigned_to, status, image_path) VALUES (?, ?, ?, ?, ?, ?)',
+      [product_name, created_by, productRequestId, store_assigned_to, 'open', downloadURL]
     );
 console.log("Product Request Created")
     // Get the assigned executive's email from the database (assuming you have a 'users' table)
@@ -1488,7 +1488,7 @@ app.post("/verify-otp", async (req, res) => {
         message: "OTP verified successfully",
         ...userRole,
       });
-    sendLoginEmail();
+    sendLoginEmail(email);
   } else {
     res.status(400).json({ success: false, message: "Invalid OTP" });
   }
@@ -1524,13 +1524,11 @@ app.listen(port, () => console.log(`Backend server running on port ${port}`));
 const sendLoginEmail = async (name, userEmail) => {
   try {
     const transporter = nodemailer.createTransport({
-      host: "mail.egspgroup.in",
-      port: 465,
-      secure: true,
-      auth: {
-        user: "helpdesk@egspgroup.in",
-        pass: "232003@Anbu",
-      },
+      service: "gmail",
+  auth: {
+    user: "raghavanofficials@gmail.com",
+    pass: "winp bknr ojez iipm",
+  },
     });
 
     const mailOptions = {
