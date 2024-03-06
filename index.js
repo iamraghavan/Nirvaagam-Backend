@@ -1545,3 +1545,61 @@ const sendLoginEmail = async (name, userEmail) => {
     console.error("Error sending email:", error.message);
   }
 };
+
+
+
+app.post('/api/submitForm', async (req, res) => {
+  try {
+    const {
+      guardianName,
+      guardianEmail,
+      childName,
+      childMobile,
+      serviceType,
+      message,
+    } = req.body;
+
+    // Use the form data to configure your email
+    const emailContent = `
+      Guardian Name: ${guardianName}
+      Guardian Email: ${guardianEmail}
+      Child Name: ${childName}
+      Child Mobile: ${childMobile}
+      Service Type: ${serviceType}
+      Message: ${message}
+    `;
+
+    // Set up Nodemailer transporter
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: 'raghavanofficials@gmail.com',
+        pass: 'winp bknr ojez iipm',
+      },
+    });
+
+    // Set up email options
+    const mailOptions = {
+      from: 'developer.raghavan@gmail.com',
+      to: 'raghavanofficials@gmail.com',
+      subject: 'New Appointment Request',
+      text: emailContent,
+    };
+
+    // Send email
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent: ', info.response);
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Email sent successfully!',
+    });
+  } catch (error) {
+    console.error('Error sending email: ', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Error sending email. Please try again later.',
+    });
+  }
+});
+
